@@ -4,6 +4,10 @@
     {
       "src": "server.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "your-spring-boot-app",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
