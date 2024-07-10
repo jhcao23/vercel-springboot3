@@ -1,7 +1,12 @@
 {
   "name": "spring-boot-vercel",
   "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
   "dependencies": {
     "http-proxy": "^1.18.1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }

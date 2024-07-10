@@ -1,29 +1,44 @@
 const { exec } = require('child_process');
 const http = require('http');
-const httpProxy = require('http-proxy');
 
 const SPRING_BOOT_PORT = 8080; // Assuming Spring Boot uses port 8080
 
-// Start the Spring Boot application
-const springBootProcess = exec('./your-spring-boot-app');
+let springBootProcess;
 
-springBootProcess.stdout.on('data', (data) => {
-  console.log(`Spring Boot stdout: ${data}`);
-});
+function startSpringBoot() {
+  if (!springBootProcess) {
+    springBootProcess = exec('./your-spring-boot-app');
+    
+    springBootProcess.stdout.on('data', (data) => {
+      console.log(`Spring Boot stdout: ${data}`);
+    });
 
-springBootProcess.stderr.on('data', (data) => {
-  console.error(`Spring Boot stderr: ${data}`);
-});
+    springBootProcess.stderr.on('data', (data) => {
+      console.error(`Spring Boot stderr: ${data}`);
+    });
 
-// Create a proxy server
-const proxy = httpProxy.createProxyServer({});
+    // Give Spring Boot some time to start up
+    return new Promise((resolve) => setTimeout(resolve, 5000));
+  }
+  return Promise.resolve();
+}
 
-// Create a simple HTTP server to proxy requests to Spring Boot
-const server = http.createServer((req, res) => {
-  // Proxy the request to your Spring Boot app
-  proxy.web(req, res, { target: `http://localhost:${SPRING_BOOT_PORT}` });
-});
+module.exports = async (req, res) => {
+  await startSpringBoot();
 
-server.listen(3000, () => {
-  console.log('Node.js proxy server running on port 3000');
-});
+  // Forward the request to Spring Boot
+  const options = {
+    hostname: 'localhost',
+    port: SPRING_BOOT_PORT,
+    path: req.url,
+    method: req.method,
+    headers: req.headers,
+  };
+
+  const proxyReq = http.request(options, (proxyRes) => {
+    res.writeHead(proxyRes.statusCode, proxyRes.headers);
+    proxyRes.pipe(res, { end: true });
+  });
+
+  req.pipe(proxyReq, { end: true });
+};
