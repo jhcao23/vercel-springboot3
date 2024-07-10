@@ -5,10 +5,5 @@
       "src": "/(.*)",
       "dest": "server.js"
     }
-  ],
-  "functions": {
-    "server.js": {
-      "memory": 1024
-    }
-  }
+  ]
 }
