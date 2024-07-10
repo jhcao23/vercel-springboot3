@@ -1,4 +1,4 @@
-const { exec } = require('child_process');
+const { exec, execSync } = require('child_process');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -13,6 +13,13 @@ function startSpringBoot() {
     console.log('Starting Spring Boot application...');
     console.log('Current directory:', process.cwd());
     console.log('Files in current directory:', fs.readdirSync('.').join(', '));
+    console.log('Executable permissions:', fs.statSync(SPRING_BOOT_APP).mode.toString(8));
+    
+    try {
+      console.log('File type:', execSync(`file ${SPRING_BOOT_APP}`).toString());
+    } catch (error) {
+      console.error('Error checking file type:', error);
+    }
 
     if (!fs.existsSync(SPRING_BOOT_APP)) {
       console.error(`Error: ${SPRING_BOOT_APP} not found!`);
@@ -39,7 +46,7 @@ function startSpringBoot() {
       console.error(`Spring Boot stderr: ${data}`);
     });
 
-    return new Promise((resolve) => setTimeout(resolve, 10000)); // Increased timeout to 10 seconds
+    return new Promise((resolve) => setTimeout(resolve, 10000));
   }
   return Promise.resolve();
 }
