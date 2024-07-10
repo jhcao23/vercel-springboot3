@@ -1,7 +1,6 @@
-const { exec, execSync } = require('child_process');
+const { exec } = require('child_process');
 const http = require('http');
 const fs = require('fs');
-const path = require('path');
 
 const SPRING_BOOT_PORT = 8080;
 const SPRING_BOOT_APP = './your-spring-boot-app';
@@ -9,22 +8,17 @@ const SPRING_BOOT_APP = './your-spring-boot-app';
 let springBootProcess;
 
 function startSpringBoot() {
-  if (!springBootProcess) {
+  return new Promise((resolve, reject) => {
     console.log('Starting Spring Boot application...');
     console.log('Current directory:', process.cwd());
     console.log('Files in current directory:', fs.readdirSync('.').join(', '));
-    console.log('Executable permissions:', fs.statSync(SPRING_BOOT_APP).mode.toString(8));
-
-    try {
-      console.log('File type:', execSync(`file ${SPRING_BOOT_APP}`).toString());
-    } catch (error) {
-      console.error('Error checking file type:', error);
-    }
 
     if (!fs.existsSync(SPRING_BOOT_APP)) {
       console.error(`Error: ${SPRING_BOOT_APP} not found!`);
-      return Promise.reject(new Error(`${SPRING_BOOT_APP} not found`));
+      return reject(new Error(`${SPRING_BOOT_APP} not found`));
     }
+
+    console.log('File permissions:', fs.statSync(SPRING_BOOT_APP).mode.toString(8));
 
     // Make sure the file is executable
     fs.chmodSync(SPRING_BOOT_APP, '755');
@@ -32,28 +26,36 @@ function startSpringBoot() {
     springBootProcess = exec(SPRING_BOOT_APP, (error, stdout, stderr) => {
       if (error) {
         console.error(`exec error: ${error}`);
+        reject(error);
         return;
       }
       console.log(`stdout: ${stdout}`);
       console.error(`stderr: ${stderr}`);
     });
-
+    
     springBootProcess.stdout.on('data', (data) => {
       console.log(`Spring Boot stdout: ${data}`);
+      if (data.includes('Started')) {
+        resolve();
+      }
     });
 
     springBootProcess.stderr.on('data', (data) => {
       console.error(`Spring Boot stderr: ${data}`);
     });
 
-    return new Promise((resolve) => setTimeout(resolve, 10000));
-  }
-  return Promise.resolve();
+    // Set a timeout in case the app doesn't start
+    setTimeout(() => {
+      reject(new Error('Spring Boot app failed to start in time'));
+    }, 30000);
+  });
 }
 
 module.exports = async (req, res) => {
   try {
-    await startSpringBoot();
+    if (!springBootProcess) {
+      await startSpringBoot();
+    }
 
     const options = {
       hostname: 'localhost',
@@ -76,8 +78,8 @@ module.exports = async (req, res) => {
 
     req.pipe(proxyReq, { end: true });
   } catch (error) {
-    console.error('Error starting Spring Boot:', error);
+    console.error('Error:', error);
     res.statusCode = 500;
-    res.end('Internal Server Error: Failed to start Spring Boot application');
+    res.end(`Internal Server Error: ${error.message}`);
   }
 };
