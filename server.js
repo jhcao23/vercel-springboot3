@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const SPRING_BOOT_PORT = 8080;
-const SPRING_BOOT_APP = './your-spring-boot-app';
+const SPRING_BOOT_APP = '/vercel/path0/your-spring-boot-app';
 
 let springBootProcess;
 
@@ -14,7 +14,7 @@ function startSpringBoot() {
     console.log('Current directory:', process.cwd());
     console.log('Files in current directory:', fs.readdirSync('.').join(', '));
     console.log('Executable permissions:', fs.statSync(SPRING_BOOT_APP).mode.toString(8));
-    
+
     try {
       console.log('File type:', execSync(`file ${SPRING_BOOT_APP}`).toString());
     } catch (error) {
@@ -37,7 +37,7 @@ function startSpringBoot() {
       console.log(`stdout: ${stdout}`);
       console.error(`stderr: ${stderr}`);
     });
-    
+
     springBootProcess.stdout.on('data', (data) => {
       console.log(`Spring Boot stdout: ${data}`);
     });
