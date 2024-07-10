@@ -5,7 +5,7 @@ const fs = require('fs');
 
 const app = express();
 const SPRING_BOOT_PORT = 8080;
-const SPRING_BOOT_APP = '/var/task/your-spring-boot-app';
+const SPRING_BOOT_APP = './your-spring-boot-app';
 
 let springBootProcess;
 
