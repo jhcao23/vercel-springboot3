@@ -1,4 +1,5 @@
 {
+  "buildCommand": "node server.js",
   "version": 2,
   "routes": [
     {
