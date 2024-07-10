@@ -12,10 +12,6 @@
   ],
   "routes": [
     {
-      "src": "/your-spring-boot-app",
-      "dest": "/your-spring-boot-app"
-    },
-    {
       "src": "/(.*)",
       "dest": "server.js"
     }
