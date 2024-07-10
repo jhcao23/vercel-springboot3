@@ -1,0 +1,16 @@
+# Ignore everything
+*
+
+# But don't ignore these files
+!package.json
+!package-lock.json
+!server.js
+!download.js
+!vercel.json
+
+# Don't ignore the Spring Boot app if you decide to include it directly
+!your-spring-boot-app
+
+# Don't ignore any directories that Vercel needs
+!api/
+!public/
