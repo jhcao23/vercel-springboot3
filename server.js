@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const SPRING_BOOT_PORT = 8080;
-const SPRING_BOOT_APP = '/vercel/path0/your-spring-boot-app';
+const SPRING_BOOT_APP = './your-spring-boot-app';
 
 let springBootProcess;
 
