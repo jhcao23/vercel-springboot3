@@ -1,7 +1,9 @@
+const express = require('express');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 const { exec } = require('child_process');
-const http = require('http');
 const fs = require('fs');
 
+const app = express();
 const SPRING_BOOT_PORT = 8080;
 const SPRING_BOOT_APP = './your-spring-boot-app';
 
@@ -51,35 +53,42 @@ function startSpringBoot() {
   });
 }
 
-module.exports = async (req, res) => {
-  try {
-    if (!springBootProcess) {
+// Middleware to start Spring Boot before handling any requests
+app.use(async (req, res, next) => {
+  if (!springBootProcess) {
+    try {
       await startSpringBoot();
+    } catch (error) {
+      console.error('Failed to start Spring Boot:', error);
+      return res.status(500).send('Failed to start Spring Boot application');
     }
-
-    const options = {
-      hostname: 'localhost',
-      port: SPRING_BOOT_PORT,
-      path: req.url,
-      method: req.method,
-      headers: req.headers,
-    };
-
-    const proxyReq = http.request(options, (proxyRes) => {
-      res.writeHead(proxyRes.statusCode, proxyRes.headers);
-      proxyRes.pipe(res, { end: true });
-    });
-
-    proxyReq.on('error', (error) => {
-      console.error('Proxy request error:', error);
-      res.statusCode = 500;
-      res.end('Internal Server Error: Failed to proxy request to Spring Boot application');
-    });
-
-    req.pipe(proxyReq, { end: true });
-  } catch (error) {
-    console.error('Error:', error);
-    res.statusCode = 500;
-    res.end(`Internal Server Error: ${error.message}`);
   }
-};
+  next();
+});
+
+// Proxy middleware
+app.use('/', createProxyMiddleware({
+  target: `http://localhost:${SPRING_BOOT_PORT}`,
+  changeOrigin: true,
+  onError: (err, req, res) => {
+    console.error('Proxy error:', err);
+    res.status(500).send('Proxy error occurred');
+  }
+}));
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+
+// For Vercel, we need to export a function that starts our server
+module.exports = app;
+
+// If running locally, listen on a port
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}
