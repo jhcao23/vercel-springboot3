@@ -5,7 +5,6 @@
 !package.json
 !package-lock.json
 !server.js
-!download.js
 !vercel.json
 
 # Don't ignore the Spring Boot app if you decide to include it directly

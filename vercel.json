@@ -1,13 +1,6 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "download.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["your-spring-boot-app"]
-      }
-    },
     { "src": "server.js", "use": "@vercel/node" }
   ],
   "routes": [

@@ -2,28 +2,49 @@ const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const { exec } = require('child_process');
 const fs = require('fs');
+const https = require('https');
 
 const app = express();
 const SPRING_BOOT_PORT = 8080;
 const SPRING_BOOT_APP = './your-spring-boot-app';
+const SPRING_BOOT_APP_URL = process.env.SPRING_BOOT_APP_URL;
 
 let springBootProcess;
+
+function downloadFile(url, outputPath) {
+  return new Promise((resolve, reject) => {
+    console.log(`Downloading file from ${url} to ${outputPath}`);
+    const file = fs.createWriteStream(outputPath);
+    https.get(url, (response) => {
+      response.pipe(file);
+      file.on('finish', () => {
+        file.close(() => {
+          console.log('Download completed');
+          resolve();
+        });
+      });
+    }).on('error', (error) => {
+      fs.unlink(outputPath, () => reject(error));
+    });
+  });
+}
+
+async function ensureSpringBootApp() {
+  if (!fs.existsSync(SPRING_BOOT_APP)) {
+    if (!SPRING_BOOT_APP_URL) {
+      throw new Error('SPRING_BOOT_APP_URL environment variable is not set');
+    }
+    await downloadFile(SPRING_BOOT_APP_URL, SPRING_BOOT_APP);
+    fs.chmodSync(SPRING_BOOT_APP, '755');
+    console.log('Made Spring Boot app executable');
+  }
+}
 
 function startSpringBoot() {
   return new Promise((resolve, reject) => {
     console.log('Starting Spring Boot application...');
     console.log('Current directory:', process.cwd());
     console.log('Files in current directory:', fs.readdirSync('.').join(', '));
-
-    if (!fs.existsSync(SPRING_BOOT_APP)) {
-      console.error(`Error: ${SPRING_BOOT_APP} not found!`);
-      return reject(new Error(`${SPRING_BOOT_APP} not found`));
-    }
-
-    console.log('File permissions:', fs.statSync(SPRING_BOOT_APP).mode.toString(8));
-
-    // Make sure the file is executable
-    fs.chmodSync(SPRING_BOOT_APP, '755');
 
     springBootProcess = exec(SPRING_BOOT_APP, (error, stdout, stderr) => {
       if (error) {
@@ -53,10 +74,11 @@ function startSpringBoot() {
   });
 }
 
-// Middleware to start Spring Boot before handling any requests
+// Middleware to ensure Spring Boot app is present and started before handling any requests
 app.use(async (req, res, next) => {
   if (!springBootProcess) {
     try {
+      await ensureSpringBootApp();
       await startSpringBoot();
     } catch (error) {
       console.error('Failed to start Spring Boot:', error);
