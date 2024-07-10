@@ -5,7 +5,7 @@ const fs = require('fs');
 
 const app = express();
 const SPRING_BOOT_PORT = 8080;
-const SPRING_BOOT_APP = './your-spring-boot-app';
+const SPRING_BOOT_APP = 'public/your-spring-boot-app';
 
 let springBootProcess;
 
@@ -14,6 +14,7 @@ function startSpringBoot() {
     console.log('Starting Spring Boot application...');
     console.log('Current directory:', process.cwd());
     console.log('Files in current directory:', fs.readdirSync('.').join(', '));
+    console.log('Files in public directory:', fs.readdirSync('public').join(', '));
 
     if (!fs.existsSync(SPRING_BOOT_APP)) {
       console.error(`Error: ${SPRING_BOOT_APP} not found!`);
